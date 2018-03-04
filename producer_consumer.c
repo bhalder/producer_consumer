@@ -10,7 +10,7 @@
 #define MASK (MAXQUEUE - 1)
 
 /* Thread count */
-#define PRODUCERCOUNT 1 
+#define PRODUCERCOUNT 10 
 #define CONSUMERCOUNT 1
 
 /* Queue structure - Circular Queue at that */
@@ -20,7 +20,11 @@ struct queue {
   unsigned int data[MAXQUEUE];  
 };
 
+/* Ring buffer and the concurrency parameters. */
 struct queue ringBuffer;
+pthread_mutex_t ring_mtx = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t ring_cond_full = PTHREAD_COND_INITIALIZER;
+pthread_cond_t ring_cond_empty = PTHREAD_COND_INITIALIZER;
 
 /* Queue full condition is : head & MASK == tail & MASK && head > tail */ 
 void enqueue(unsigned int d) {
@@ -28,7 +32,6 @@ void enqueue(unsigned int d) {
      (ringBuffer.head > ringBuffer.tail)) {
 
     printf ("\nQueue full! Dropping data [%u]", d);
-
     return;
   } else {
     ringBuffer.head++;
@@ -52,17 +55,35 @@ unsigned int dequeue() {
 /* Function to "produce" aka. enqueue() random numbers */
 
 void produce(r) {
+  pthread_mutex_lock(&ring_mtx);
+
+  while((ringBuffer.head & MASK) == (ringBuffer.tail & MASK) &&
+        (ringBuffer.head > ringBuffer.tail)) {
+    pthread_cond_wait(&ring_cond_full, &ring_mtx);
+  }
+ 
   enqueue(r);
+  pthread_cond_signal(&ring_cond_empty);
+  pthread_mutex_unlock(&ring_mtx);
   sleep(1);
   return;
 }
 
 /* Function to "consume" aka. dequeue() numbers from the queue */
 void consume() {
-  /* Right now simple stuff. Just dequeue a number. */
-  int a = dequeue();
+  int a = -1;
+  pthread_mutex_lock(&ring_mtx);
+
+  while(ringBuffer.head == ringBuffer.tail) { 
+    pthread_cond_wait(&ring_cond_empty, &ring_mtx);
+  }
+
+  a = dequeue();
+  pthread_cond_signal(&ring_cond_full);
+  pthread_mutex_unlock(&ring_mtx);
   printf("\nConsumer just consumed - %u", a); 
   sleep(1);
+
   return;  
 }
 
