@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <pthread.h>
+#include <time.h>
+#include <stdlib.h>
 
 /* Keep this a power of 2 */
 #define MAXQUEUE 32
@@ -45,30 +47,34 @@ unsigned int dequeue() {
 }
 
 /* Function to "produce" aka. enqueue() random numbers */
-void producerWork() {
-
-  /* TODO: Add code */
-
+void produce() {
+	srand(time(NULL));
+  /* Right now simple stuff. Just enqueue a number. */
+	int r = rand();
+	enqueue(r);
+	return;
 }
 
 /* Function to "consume" aka. dequeue() numbers from the queue */
-void consumerWork() {
-
-  /* TODO: Add code */
-
+void consume() {
+  /* Right now simple stuff. Just dequeue a number. */
+	int a = dequeue();
+	printf("\nConsumer just consumed - %u", a); 
+	return;	
 }
 
 /* The function which the producer thread runs continuously */
 void producer() {
 
-  /* TODO: Add code */
-
+	while(1) {
+		produce();
+	}
 }
 
 void consumer() {
-
-  /* TODO: Add code */
-
+	while(1) {
+		consume();
+	}
 }
 
 int main() {
