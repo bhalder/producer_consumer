@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <pthread.h>
+#include <time.h>
+#include <stdlib.h>
 
 /* Keep this a power of 2 */
 #define MAXQUEUE 32
@@ -24,7 +26,9 @@ struct queue ringBuffer;
 void enqueue(unsigned int d) {
   if((ringBuffer.head & MASK) == (ringBuffer.tail & MASK) &&
      (ringBuffer.head > ringBuffer.tail)) {
-    printf ("Queue full! Dropping data [%u]", d);
+
+    printf ("\nQueue full! Dropping data [%u]", d);
+
     return;
   } else {
     ringBuffer.head++;
@@ -35,7 +39,7 @@ void enqueue(unsigned int d) {
 /* Queue empty condition is : head == tail */
 unsigned int dequeue() {
   if(ringBuffer.head == ringBuffer.tail) {
-    printf("Queue is empty. No data to be shared.");
+    printf("\nQueue is empty. No data to be shared.");
     return 0;
   } else {
     unsigned int d = ringBuffer.data[ringBuffer.tail & MASK];
@@ -45,35 +49,63 @@ unsigned int dequeue() {
 }
 
 /* Function to "produce" aka. enqueue() random numbers */
-void producerWork() {
 
-  /* TODO: Add code */
-
+void produce() {
+  srand(time(NULL));
+  /* Right now simple stuff. Just enqueue a number. */
+  int r = rand();
+  enqueue(r);
+  return;
 }
 
 /* Function to "consume" aka. dequeue() numbers from the queue */
-void consumerWork() {
-
-  /* TODO: Add code */
-
+void consume() {
+  /* Right now simple stuff. Just dequeue a number. */
+  int a = dequeue();
+  printf("\nConsumer just consumed - %u", a); 
+  return;  
 }
 
 /* The function which the producer thread runs continuously */
-void producer() {
+void* producer(void *arg) {
+  while(1) {
+    produce();
+  }
 
-  /* TODO: Add code */
-
+  printf("\nReturning from producer.");
 }
 
-void consumer() {
-
-  /* TODO: Add code */
-
+void* consumer(void *arg) {
+  while(1) {
+    consume();
+  }
+  printf("\nReturning from consumer.");
 }
 
 int main() {
-  pthread_t producer[PRODUCERCOUNT];
-  pthread_t consumer[CONSUMERCOUNT];
+  int i = 0;
 
+  pthread_t producer_thread[PRODUCERCOUNT];
+  pthread_t consumer_thread[CONSUMERCOUNT];
+
+  /* Start the Consumer threads first. */
+  for(i = 0; i < CONSUMERCOUNT; i++) {
+    pthread_create(&consumer_thread[i], NULL, &consumer, NULL);
+  }
+
+  /* Start the Producer threads. */
+  for(i = 0; i < PRODUCERCOUNT; i++) {
+    pthread_create(&producer_thread[i], NULL, &producer, NULL);
+  }
+
+  for(i = 0; i < CONSUMERCOUNT; i++) {
+    pthread_join(consumer_thread[i], NULL);
+  }
+
+  for(i = 0; i < PRODUCERCOUNT; i++) {
+    pthread_join(producer_thread[i], NULL);
+  }
+ 
+  printf("\nThis is the end of the main function.");
   return 0;  
 }
