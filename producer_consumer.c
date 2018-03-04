@@ -33,6 +33,7 @@ void enqueue(unsigned int d) {
   } else {
     ringBuffer.head++;
     ringBuffer.data[ringBuffer.head & MASK] = d; 
+    printf ("\nAdded into the queue [%u]", d);
   }
 }
 
@@ -50,11 +51,9 @@ unsigned int dequeue() {
 
 /* Function to "produce" aka. enqueue() random numbers */
 
-void produce() {
-  srand(time(NULL));
-  /* Right now simple stuff. Just enqueue a number. */
-  int r = rand();
+void produce(r) {
   enqueue(r);
+  sleep(1);
   return;
 }
 
@@ -63,13 +62,15 @@ void consume() {
   /* Right now simple stuff. Just dequeue a number. */
   int a = dequeue();
   printf("\nConsumer just consumed - %u", a); 
+  sleep(1);
   return;  
 }
 
 /* The function which the producer thread runs continuously */
 void* producer(void *arg) {
+  int r = 0;
   while(1) {
-    produce();
+    produce(r++);
   }
 
   printf("\nReturning from producer.");
@@ -84,6 +85,8 @@ void* consumer(void *arg) {
 
 int main() {
   int i = 0;
+  ringBuffer.tail = 0;
+  ringBuffer.head = 0;
 
   pthread_t producer_thread[PRODUCERCOUNT];
   pthread_t consumer_thread[CONSUMERCOUNT];
