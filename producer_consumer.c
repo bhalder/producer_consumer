@@ -26,7 +26,9 @@ struct queue ringBuffer;
 void enqueue(unsigned int d) {
   if((ringBuffer.head & MASK) == (ringBuffer.tail & MASK) &&
      (ringBuffer.head > ringBuffer.tail)) {
+
     printf ("\nQueue full! Dropping data [%u]", d);
+
     return;
   } else {
     ringBuffer.head++;
@@ -47,6 +49,7 @@ unsigned int dequeue() {
 }
 
 /* Function to "produce" aka. enqueue() random numbers */
+
 void produce() {
   srand(time(NULL));
   /* Right now simple stuff. Just enqueue a number. */
